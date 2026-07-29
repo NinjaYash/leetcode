@@ -1,14 +1,13 @@
 class Solution {
 
-    private static final long LIMIT = 1_000_000L;
-    private List<Integer> primes;
+    static final long LIMIT = 1_000_001L;
 
     public String smallestPalindrome(String s, int k) {
+
         int[] freq = new int[26];
 
-        for (char ch : s.toCharArray()) {
-            freq[ch - 'a']++;
-        }
+        for (char c : s.toCharArray())
+            freq[c - 'a']++;
 
         int[] half = new int[26];
         int halfLen = 0;
@@ -17,98 +16,90 @@ class Solution {
         for (int i = 0; i < 26; i++) {
             half[i] = freq[i] / 2;
             halfLen += half[i];
-            if ((freq[i] & 1) == 1) {
+
+            if ((freq[i] & 1) == 1)
                 mid = (char) ('a' + i);
-            }
         }
 
-        sieve(halfLen);
-
-        if (countWays(half, halfLen) < k) {
+        if (countWays(half) < k)
             return "";
-        }
 
-        StringBuilder firstHalf = new StringBuilder();
-        int remaining = halfLen;
+        StringBuilder first = new StringBuilder();
 
-        while (remaining > 0) {
+        while (halfLen > 0) {
+
             for (int c = 0; c < 26; c++) {
-                if (half[c] == 0) continue;
+
+                if (half[c] == 0)
+                    continue;
 
                 half[c]--;
 
-                long ways = countWays(half, remaining - 1);
+                long ways = countWays(half);
 
                 if (ways >= k) {
-                    firstHalf.append((char) ('a' + c));
-                    remaining--;
+                    first.append((char) ('a' + c));
+                    halfLen--;
                     break;
-                } else {
-                    k -= ways;
-                    half[c]++;
                 }
+
+                k -= ways;
+                half[c]++;
             }
         }
 
         StringBuilder ans = new StringBuilder();
-        ans.append(firstHalf);
 
-        if (mid != 0) {
+        ans.append(first);
+
+        if (mid != 0)
             ans.append(mid);
-        }
 
-        ans.append(new StringBuilder(firstHalf).reverse());
+        ans.append(new StringBuilder(first).reverse());
 
         return ans.toString();
     }
 
-    private void sieve(int n) {
-        primes = new ArrayList<>();
-        boolean[] composite = new boolean[n + 1];
+    private long countWays(int[] cnt) {
 
-        for (int i = 2; i <= n; i++) {
-            if (!composite[i]) {
-                primes.add(i);
-                if ((long) i * i <= n) {
-                    for (int j = i * i; j <= n; j += i) {
-                        composite[j] = true;
-                    }
-                }
-            }
-        }
-    }
+        int total = 0;
 
-    private int exponentInFactorial(int n, int p) {
-        int res = 0;
-        while (n > 0) {
-            n /= p;
-            res += n;
-        }
-        return res;
-    }
+        for (int x : cnt)
+            total += x;
 
-    private long countWays(int[] cnt, int total) {
         long ans = 1;
+        int rem = total;
 
-        for (int p : primes) {
-            if (p > total) break;
+        for (int x : cnt) {
 
-            int exp = exponentInFactorial(total, p);
+            if (x == 0)
+                continue;
 
-            for (int x : cnt) {
-                if (x > 1) {
-                    exp -= exponentInFactorial(x, p);
-                }
-            }
+            ans *= nCr(rem, x);
 
-            while (exp-- > 0) {
-                ans *= p;
-                if (ans >= LIMIT) {
-                    return LIMIT;
-                }
-            }
+            if (ans >= LIMIT)
+                return LIMIT;
+
+            rem -= x;
         }
 
         return ans;
+    }
+
+    private long nCr(int n, int r) {
+
+        r = Math.min(r, n - r);
+
+        long res = 1;
+
+        for (int i = 1; i <= r; i++) {
+
+            res = res * (n - r + i) / i;
+
+            if (res >= LIMIT)
+                return LIMIT;
+        }
+
+        return res;
     }
 }
